@@ -22,7 +22,7 @@ public class UserService {
 
     private final UserRepository repository;
 
-    public UserService(UserRepository repository){
+    public UserService(UserRepository repository) {
         this.repository = repository;
     }
 
@@ -99,9 +99,9 @@ public class UserService {
                     .status(HttpStatus.BAD_REQUEST)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(
-                    "{\"date1\": " + date1 + "," + "\"date2\": " + date2 + "," +
-                            "\"error\": \"Date1 must be before Date2\"}"
-            );
+                            "{\"date1\": " + date1 + "," + "\"date2\": " + date2 + "," +
+                                    "\"error\": \"Date1 must be before Date2\"}"
+                    );
         }
 
         List<User> users = repository.findByBirthDateBetween(date1, date2);
