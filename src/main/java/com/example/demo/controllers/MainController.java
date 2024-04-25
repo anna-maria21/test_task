@@ -5,12 +5,11 @@ import com.example.demo.Entities.User;
 import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.services.UserService;
 import jakarta.validation.Valid;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -43,7 +42,10 @@ public class MainController {
         ResponseEntity<?> errors = service.getResponseEntity(newUser, result);
         if (errors != null) return errors;
         service.save(newUser);
-        return ResponseEntity.ok("User created successfully");
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("User created successfully");
     }
 
     @PutMapping("/update/{id}")
@@ -51,19 +53,28 @@ public class MainController {
         ResponseEntity<?> errors = service.getResponseEntity(newUser, result);
         if (errors != null) return errors;
         service.updateUser(newUser, id);
-        return ResponseEntity.ok("User updated successfully");
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("User updated successfully");
     }
 
     @DeleteMapping("/delete/{id}")
     ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
         service.deleteById(id);
-        return ResponseEntity.ok("User deleted successfully");
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("User deleted successfully");
     }
 
     @DeleteMapping("/delete/all")
     ResponseEntity<?> deleteEmployee() {
         service.deleteAll();
-        return ResponseEntity.ok("All users deleted successfully");
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("All users deleted successfully");
     }
 
 

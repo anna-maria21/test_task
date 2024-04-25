@@ -6,10 +6,10 @@ import com.example.demo.repositories.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
@@ -21,11 +21,9 @@ import java.util.*;
 public class UserService {
 
     private final UserRepository repository;
-    private final ValidatorService validator;
 
     public UserService(UserRepository repository){
         this.repository = repository;
-        this.validator = new ValidatorService();
     }
 
     public List<User> findAll() {
@@ -78,11 +76,10 @@ public class UserService {
             result.rejectValue("birthDate", "invalid", "User must be at least " + minAge + " years old");
         }
         if (result.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            for (FieldError error : result.getFieldErrors()) {
-                errors.put(error.getField(), error.getDefaultMessage());
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(result);
         }
         newUser.setFirstName(newUser.capitalize(newUser.getFirstName()));
         newUser.setLastName(newUser.capitalize(newUser.getLastName()));
@@ -91,17 +88,26 @@ public class UserService {
 
     public ResponseEntity<Object> findUsersBetweenDates(Date date1, Date date2) {
         if (date1 == null || date2 == null) {
-            return ResponseEntity.badRequest().body("Date1 and Date2 cannot be null");
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body("Date1 and Date2 cannot be null");
         }
 
         if (date1.after(date2)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(
                     "{\"date1\": " + date1 + "," + "\"date2\": " + date2 + "," +
                             "\"error\": \"Date1 must be before Date2\"}"
             );
         }
 
         List<User> users = repository.findByBirthDateBetween(date1, date2);
-        return ResponseEntity.ok(users);
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(users);
     }
 }
