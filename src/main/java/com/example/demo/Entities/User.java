@@ -3,20 +3,18 @@ package com.example.demo.Entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Date;
 
-
+//бажано поділити на дто та ентіті
 @Entity
 @Table(name = "user")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
+@ToString
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,16 +41,17 @@ public class User {
         return line.substring(0, 1).toUpperCase() + line.substring(1);
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", email='" + email + '\'' +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", birthDate=" + birthDate +
-                ", address='" + address + '\'' +
-                ", phoneNumber='" + phoneNumber + '\'' +
-                '}';
-    }
+    //також ломбок впорається @ToString *
+//    @Override
+//    public String toString() {
+//        return "User{" +
+//                "id=" + id +
+//                ", email='" + email + '\'' +
+//                ", firstName='" + firstName + '\'' +
+//                ", lastName='" + lastName + '\'' +
+//                ", birthDate=" + birthDate +
+//                ", address='" + address + '\'' +
+//                ", phoneNumber='" + phoneNumber + '\'' +
+//                '}';
+//    }
 }

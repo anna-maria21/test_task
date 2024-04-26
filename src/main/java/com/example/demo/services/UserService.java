@@ -1,9 +1,12 @@
 package com.example.demo.services;
 
 import com.example.demo.Entities.User;
+import com.example.demo.exceptions.DatesAreNullException;
+import com.example.demo.exceptions.DatesAreWrongException;
 import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.repositories.UserRepository;
 import jakarta.validation.Valid;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,14 +20,25 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.util.*;
 
+
 @Service
 public class UserService {
 
     private final UserRepository repository;
+    //круто, що юзаєш аноташку Value, мені таке подобажться, але я
+    // не розумію звідки береться minAge? бо нема бачу application.properties - https://www.baeldung.com/properties-with-spring
+    @Value("${user.minAge}")
+    private int minAge;
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, @Value("${user.minAge}") int minAge) {
         this.repository = repository;
+        this.minAge = minAge;
     }
+
+    //замінити на ломбок - @AllArgsContructor на рівні класу *
+//    public UserService(UserRepository repository) {
+//        this.repository = repository;
+//    }
 
     public List<User> findAll() {
         return repository.findAll();
@@ -38,9 +52,8 @@ public class UserService {
         return repository.save(newUser);
     }
 
-    @Value("${user.minAge}")
-    private int minAge;
 
+    //гарно також було б винести в аноташкку свою власну - https://www.baeldung.com/spring-mvc-custom-validator)) *?
     public boolean validateBirthDate(Date birthDate) {
         LocalDate today = LocalDate.now();
         LocalDate birthDateLocal = birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
@@ -48,25 +61,27 @@ public class UserService {
         return period.getYears() >= minAge;
     }
 
-    public void deleteById(Long id) {
+    public Long deleteById(Long id) {
         repository.deleteById(id);
+        return id;
     }
 
     public void deleteAll() {
         repository.deleteAll();
     }
 
-    public User updateUser(User newUser, Long id) {
+    // просто назва апдейт буде краща *
+    public User update(User newUser, Long id) {
+        // Мені подобається, що через опшинал і те що є власний ексепшн - це дуже гарно))) *
         return repository.findById(id)
-                .map(user -> {
-                    user.setFirstName(newUser.getFirstName());
-                    user.setLastName(newUser.getLastName());
-                    user.setEmail(newUser.getEmail());
-                    user.setBirthDate(newUser.getBirthDate());
-                    user.setAddress(newUser.getAddress());
-                    user.setPhoneNumber(newUser.getPhoneNumber());
-                    return repository.save(user);
-                })
+                //в тебе тут повний, а не частковий апдейт -просто зберігай отриману ентітію
+//                    user.setFirstName(newUser.getFirstName());
+//                    user.setLastName(newUser.getLastName());
+//                    user.setEmail(newUser.getEmail());
+//                    user.setBirthDate(newUser.getBirthDate());
+//                    user.setAddress(newUser.getAddress());
+//                    user.setPhoneNumber(newUser.getPhoneNumber());
+                .map(repository::save)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
     }
@@ -86,28 +101,18 @@ public class UserService {
         return null;
     }
 
-    public ResponseEntity<Object> findUsersBetweenDates(Date date1, Date date2) {
-        if (date1 == null || date2 == null) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body("Date1 and Date2 cannot be null");
+    public List<User> findUsersBetweenDates(Date from, Date to) {
+//        //краще кидати ексепшени власні і обробляти в контролер едвайс - ніж кастомізувати ResponseEntity *
+        if (from == null || to == null) {
+            throw new DatesAreNullException();
+        }
+//
+//        //краще кидати ексепшени власні і обробляти в контролер едвайс - ніж кастомізувати ResponseEntity *
+        if (from.after(to)) {
+            throw new DatesAreWrongException(from, to);
         }
 
-        if (date1.after(date2)) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(
-                            "{\"date1\": " + date1 + "," + "\"date2\": " + date2 + "," +
-                                    "\"error\": \"Date1 must be before Date2\"}"
-                    );
-        }
-
-        List<User> users = repository.findByBirthDateBetween(date1, date2);
-        return ResponseEntity
-                .ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(users);
+        List<User> users = repository.findByBirthDateBetween(from, to);
+        return users;
     }
 }
