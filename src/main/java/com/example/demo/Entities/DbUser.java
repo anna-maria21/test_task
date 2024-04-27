@@ -26,6 +26,7 @@ public class DbUser {
 
     private String lastName;
 
+    @Temporal(TemporalType.DATE)
     private Date birthDate;
 
     private String address;

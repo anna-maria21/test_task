@@ -1,8 +1,6 @@
 package com.example.demo.DTO;
 
 import com.example.demo.annotations.BirthDateConstraint;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 
@@ -24,7 +22,6 @@ public record User(
 
         @NotNull(message = "Birth date is required")
         @Past(message = "Birth date must be in the past")
-        @Temporal(TemporalType.DATE)
         @BirthDateConstraint
         Date birthDate,
 
