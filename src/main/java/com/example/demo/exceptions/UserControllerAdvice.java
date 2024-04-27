@@ -1,5 +1,6 @@
 package com.example.demo.exceptions;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,9 +12,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 
-//класно, що є контролер едвайси - але думаю, що на твій проект - ти можеш всі три обʼєднати в кодному класі
-// - це загальна практика в нас так роблять, UserControllerAdvice - чудова назав) *
+
 @ControllerAdvice
+@Slf4j
 public class UserControllerAdvice {
 
 
@@ -46,9 +47,7 @@ public class UserControllerAdvice {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         String errorMessage = "Email already exists in the database. Please choose a different email.";
-
         ex.printStackTrace();
-
         return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
     }
 
@@ -73,5 +72,17 @@ public class UserControllerAdvice {
         return ex.getMessage();
     }
 
+    @ResponseBody
+    @ExceptionHandler(ValidationErrorException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    ResponseEntity<Object> userFieldsValidation(ValidationErrorException ex) {
+        return  new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
 
+    @ResponseBody
+    @ExceptionHandler(DuplicateEmailException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    ResponseEntity<Object> duplicateEmail(DuplicateEmailException ex) {
+        return  new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
 }

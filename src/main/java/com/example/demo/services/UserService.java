@@ -1,118 +1,93 @@
 package com.example.demo.services;
 
-import com.example.demo.Entities.User;
+import com.example.demo.DTO.User;
+import com.example.demo.Entities.DbUser;
+import com.example.demo.converters.UserConverter;
 import com.example.demo.exceptions.DatesAreNullException;
 import com.example.demo.exceptions.DatesAreWrongException;
+import com.example.demo.exceptions.DuplicateEmailException;
 import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.repositories.UserRepository;
-import jakarta.validation.Valid;
-import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.RequestBody;
 
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.ZoneId;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 
 @Service
+@AllArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository repository;
-    //круто, що юзаєш аноташку Value, мені таке подобажться, але я
-    // не розумію звідки береться minAge? бо нема бачу application.properties - https://www.baeldung.com/properties-with-spring
-    @Value("${user.minAge}")
-    private int minAge;
+    private final UserConverter userConverter;
 
-    public UserService(UserRepository repository, @Value("${user.minAge}") int minAge) {
-        this.repository = repository;
-        this.minAge = minAge;
+    public List<User> findAll(Date from, Date to) {
+        if (from != null & to != null) {
+            return findUsersBetweenDates(from, to);
+        }
+        return repository.findAll()
+                .stream()
+                .map(userConverter::fromDbToDto)
+                .toList();
     }
 
-    //замінити на ломбок - @AllArgsContructor на рівні класу *
-//    public UserService(UserRepository repository) {
-//        this.repository = repository;
-//    }
-
-    public List<User> findAll() {
-        return repository.findAll();
-    }
-
-    public Optional<User> findById(Long id) {
-        return repository.findById(id);
+    public User findById(Long id) {
+        return repository.findById(id)
+                .map(userConverter::fromDbToDto)
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     public User save(User newUser) {
-        return repository.save(newUser);
+        repository.findByEmail(newUser.email())
+                .orElseThrow(() -> new DuplicateEmailException(newUser.email()));
+        log.info("User saved successfully: {}", newUser);
+        return userConverter.fromDbToDto(repository.save(userConverter.fromDtoToDb(newUser)));
     }
 
 
     //гарно також було б винести в аноташкку свою власну - https://www.baeldung.com/spring-mvc-custom-validator)) *?
-    public boolean validateBirthDate(Date birthDate) {
-        LocalDate today = LocalDate.now();
-        LocalDate birthDateLocal = birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        Period period = Period.between(birthDateLocal, today);
-        return period.getYears() >= minAge;
-    }
+//    public boolean validateBirthDate(Date birthDate) {
+//        LocalDate today = LocalDate.now();
+//        LocalDate birthDateLocal = birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+//        Period period = Period.between(birthDateLocal, today);
+//        return period.getYears() >= minAge;
+//    }
 
-    public Long deleteById(Long id) {
+    public void deleteById(Long id) {
+        log.info("User deleted successfully: {}", id);
         repository.deleteById(id);
-        return id;
     }
 
     public void deleteAll() {
+        log.info("All users deleted successfully");
         repository.deleteAll();
     }
 
-    // просто назва апдейт буде краща *
     public User update(User newUser, Long id) {
-        // Мені подобається, що через опшинал і те що є власний ексепшн - це дуже гарно))) *
-        return repository.findById(id)
-                //в тебе тут повний, а не частковий апдейт -просто зберігай отриману ентітію
-//                    user.setFirstName(newUser.getFirstName());
-//                    user.setLastName(newUser.getLastName());
-//                    user.setEmail(newUser.getEmail());
-//                    user.setBirthDate(newUser.getBirthDate());
-//                    user.setAddress(newUser.getAddress());
-//                    user.setPhoneNumber(newUser.getPhoneNumber());
-                .map(repository::save)
+        DbUser existingUser = repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-    }
-
-    public ResponseEntity<?> getResponseEntity(@RequestBody @Valid User newUser, BindingResult result) {
-        if (!validateBirthDate(newUser.getBirthDate())) {
-            result.rejectValue("birthDate", "invalid", "User must be at least " + minAge + " years old");
-        }
-        if (result.hasErrors()) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(result);
-        }
-        newUser.setFirstName(newUser.capitalize(newUser.getFirstName()));
-        newUser.setLastName(newUser.capitalize(newUser.getLastName()));
-        return null;
+        DbUser updatedUser = userConverter.fromDtoToDb(newUser);
+        updatedUser.setId(existingUser.getId());
+        log.info("User updated successfully: {}", updatedUser);
+        return userConverter.fromDbToDto(repository.save(updatedUser));
     }
 
     public List<User> findUsersBetweenDates(Date from, Date to) {
-//        //краще кидати ексепшени власні і обробляти в контролер едвайс - ніж кастомізувати ResponseEntity *
         if (from == null || to == null) {
             throw new DatesAreNullException();
         }
-//
-//        //краще кидати ексепшени власні і обробляти в контролер едвайс - ніж кастомізувати ResponseEntity *
+
         if (from.after(to)) {
             throw new DatesAreWrongException(from, to);
         }
 
-        List<User> users = repository.findByBirthDateBetween(from, to);
-        return users;
+        return repository.findByBirthDateBetween(from, to)
+                .stream()
+                .map(userConverter::fromDbToDto)
+                .toList();
     }
 }
