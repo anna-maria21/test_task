@@ -9,9 +9,12 @@ import com.example.demo.exceptions.DuplicateEmailException;
 import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.repositories.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -24,8 +27,14 @@ public class UserService {
     private final UserRepository repository;
     private final UserConverter userConverter;
 
-    public List<User> findAll(Date from, Date to) {
-        if (from != null & to != null) {
+    @Value("${user.minAge}")
+    private static int minAge;
+
+    @SneakyThrows
+    public List<User> findAll(String fromDate, String toDate) {
+        if (fromDate != null & toDate != null) {
+            Date from = new SimpleDateFormat("yyyy-MM-dd").parse(fromDate);
+            Date to = new SimpleDateFormat("yyyy-MM-dd").parse(toDate);
             return findUsersBetweenDates(from, to);
         }
         return repository.findAll()
@@ -41,20 +50,11 @@ public class UserService {
     }
 
     public User save(User newUser) {
-        repository.findByEmail(newUser.email())
-                .orElseThrow(() -> new DuplicateEmailException(newUser.email()));
+//        repository.findByEmail(newUser.email())
+//                .orElseThrow(() -> new DuplicateEmailException(newUser.email()));
         log.info("User saved successfully: {}", newUser);
         return userConverter.fromDbToDto(repository.save(userConverter.fromDtoToDb(newUser)));
     }
-
-
-    //гарно також було б винести в аноташкку свою власну - https://www.baeldung.com/spring-mvc-custom-validator)) *?
-//    public boolean validateBirthDate(Date birthDate) {
-//        LocalDate today = LocalDate.now();
-//        LocalDate birthDateLocal = birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-//        Period period = Period.between(birthDateLocal, today);
-//        return period.getYears() >= minAge;
-//    }
 
     public void deleteById(Long id) {
         log.info("User deleted successfully: {}", id);
@@ -72,6 +72,7 @@ public class UserService {
 
         DbUser updatedUser = userConverter.fromDtoToDb(newUser);
         updatedUser.setId(existingUser.getId());
+
         log.info("User updated successfully: {}", updatedUser);
         return userConverter.fromDbToDto(repository.save(updatedUser));
     }

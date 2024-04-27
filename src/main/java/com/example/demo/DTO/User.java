@@ -20,6 +20,7 @@ public record User(
         @NotBlank(message = "Last name is required")
         String lastName,
 
+
         @NotNull(message = "Birth date is required")
         @Past(message = "Birth date must be in the past")
         @BirthDateConstraint

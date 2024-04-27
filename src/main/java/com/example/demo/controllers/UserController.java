@@ -22,7 +22,7 @@ public class UserController {
 
     // ??????
     @GetMapping("")
-    List<User> all(@RequestParam(required = false) Date from, @RequestParam(required = false) Date to) {
+    List<User> all(@RequestParam(required = false) String from, @RequestParam(required = false) String to) {
         return service.findAll(from, to);
     }
 
@@ -57,8 +57,7 @@ public class UserController {
 //    }
 
     @PostMapping("")
-    User save(@Valid @RequestBody User newUser, BindingResult result) {
-        if (result.hasErrors()) throw new ValidationErrorException(result);
+    User save(@Valid @RequestBody User newUser) {
         return service.save(newUser);
     }
 

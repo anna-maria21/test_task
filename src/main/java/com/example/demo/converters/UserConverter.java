@@ -3,7 +3,11 @@ package com.example.demo.converters;
 import com.example.demo.DTO.User;
 import com.example.demo.Entities.DbUser;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface UserConverter {
