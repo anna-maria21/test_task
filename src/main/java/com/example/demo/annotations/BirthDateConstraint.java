@@ -13,7 +13,7 @@ import java.lang.annotation.*;
 public @interface BirthDateConstraint {
 
 
-    String message() default "User must be at least ** years old";
+    String message() default "User is too young";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 

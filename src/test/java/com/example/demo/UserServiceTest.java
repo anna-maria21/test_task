@@ -3,8 +3,10 @@ package com.example.demo;
 import com.example.demo.DTO.User;
 import com.example.demo.Entities.DbUser;
 import com.example.demo.converters.UserConverter;
+import com.example.demo.converters.UserMapper;
 import com.example.demo.exceptions.DatesAreNullException;
 import com.example.demo.exceptions.DatesAreWrongException;
+import com.example.demo.exceptions.DuplicateEmailException;
 import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.repositories.UserRepository;
 import com.example.demo.services.UserService;
@@ -33,7 +35,7 @@ public class UserServiceTest {
     public static final String EMAIL = "test@example.com";
     public static final String EMAIL_2 = "updated@example.com";
     @Mock
-    UserConverter userConverter;
+    UserMapper userConverter;
     @Mock
     UserRepository repository;
     @InjectMocks
@@ -176,6 +178,15 @@ public class UserServiceTest {
 
         verify(repository).save(newUser);
         assertEquals(user, savedUser);
+    }
+
+    @Test
+    void testSaveUserWithAlreadyExistingEmail() {
+        User user = createUser();
+        DbUser dbUser = createDbUser();
+        when(repository.findByEmail(user.email())).thenReturn(Optional.of(dbUser));
+
+        assertThrows(DuplicateEmailException.class, ()-> userService.save(user));
     }
 
     private static User createUser() {

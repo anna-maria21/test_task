@@ -2,7 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.DTO.User;
 import com.example.demo.Entities.DbUser;
-import com.example.demo.converters.UserConverter;
+import com.example.demo.converters.UserMapper;
 import com.example.demo.exceptions.DatesAreNullException;
 import com.example.demo.exceptions.DatesAreWrongException;
 import com.example.demo.exceptions.DuplicateEmailException;
@@ -11,7 +11,6 @@ import com.example.demo.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -25,10 +24,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository repository;
-    private final UserConverter userConverter;
-
-    @Value("${user.minAge}")
-    private static int minAge;
+    private final UserMapper userConverter;
 
     @SneakyThrows
     public List<User> findAll(String fromDate, String toDate) {
@@ -50,8 +46,9 @@ public class UserService {
     }
 
     public User save(User newUser) {
-//        repository.findByEmail(newUser.email())
-//                .orElseThrow(() -> new DuplicateEmailException(newUser.email()));
+        if (repository.findByEmail(newUser.email()).isPresent()) {
+            throw new DuplicateEmailException(newUser.email());
+        }
         log.info("User saved successfully: {}", newUser);
         return userConverter.fromDbToDto(repository.save(userConverter.fromDtoToDb(newUser)));
     }
@@ -70,6 +67,10 @@ public class UserService {
         DbUser existingUser = repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
+        if (repository.findByEmail(newUser.email()).isPresent()) {
+            throw new DuplicateEmailException(newUser.email());
+        }
+
         DbUser updatedUser = userConverter.fromDtoToDb(newUser);
         updatedUser.setId(existingUser.getId());
 
@@ -85,6 +86,7 @@ public class UserService {
         if (from.after(to)) {
             throw new DatesAreWrongException(from, to);
         }
+        System.out.println(from + " " + to);
 
         return repository.findByBirthDateBetween(from, to)
                 .stream()
