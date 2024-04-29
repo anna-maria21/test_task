@@ -7,7 +7,7 @@ import lombok.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -26,7 +26,6 @@ public class DbUser {
 
     private String lastName;
 
-    @Temporal(TemporalType.DATE)
     private Date birthDate;
 
     private String address;
