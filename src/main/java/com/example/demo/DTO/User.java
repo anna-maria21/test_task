@@ -1,8 +1,7 @@
 package com.example.demo.DTO;
 
 import com.example.demo.annotations.BirthDateConstraint;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 
@@ -22,7 +21,7 @@ public record User(
         @NotBlank(message = "Last name is required")
         String lastName,
 
-
+        @JsonFormat(pattern = "yyyy-MM-dd")
         @NotNull(message = "Birth date is required")
         @Past(message = "Birth date must be in the past")
         @BirthDateConstraint
