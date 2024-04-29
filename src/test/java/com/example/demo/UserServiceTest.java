@@ -2,7 +2,6 @@ package com.example.demo;
 
 import com.example.demo.DTO.User;
 import com.example.demo.Entities.DbUser;
-import com.example.demo.converters.UserConverter;
 import com.example.demo.converters.UserMapper;
 import com.example.demo.exceptions.DatesAreNullException;
 import com.example.demo.exceptions.DatesAreWrongException;
@@ -186,7 +185,7 @@ public class UserServiceTest {
         DbUser dbUser = createDbUser();
         when(repository.findByEmail(user.email())).thenReturn(Optional.of(dbUser));
 
-        assertThrows(DuplicateEmailException.class, ()-> userService.save(user));
+        assertThrows(DuplicateEmailException.class, () -> userService.save(user));
     }
 
     private static User createUser() {
